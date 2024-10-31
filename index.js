@@ -7,6 +7,7 @@ async function sortHackerNewsArticles() {
   const context = await browser.newContext();
   const page = await context.newPage();
 
+  // Define URLs for the first four pages of Hacker News' newest articles
   const urls = [
     'https://news.ycombinator.com/newest',
     'https://news.ycombinator.com/newest?next=41996620&n=31',
@@ -16,10 +17,14 @@ async function sortHackerNewsArticles() {
 
   let allArticles = [];
   
+  // Iterate through each URL to collect articles
   for (const url of urls) {
     await page.goto(url);
+
+    // Wait for the article elements to load
     await page.waitForSelector('tr .athing');
 
+    // Extract article information from the page
     const pageArticles = await page.evaluate(() => {
       const rows = document.querySelectorAll('tr .athing');
       return Array.from(rows).map((row) => {
@@ -38,9 +43,10 @@ async function sortHackerNewsArticles() {
 
   allArticles = allArticles.slice(0, 100);
 
+  // Log articles with their index for debugging
   console.log(allArticles.map((row, index) => ({index, ...row})));
 
-  // Iterate through allArticle object, testing that it is sorted newest to oldest
+  // Check if articles are sorted from newest to oldest
   let isSorted = true;
   for (let i = 1; i < allArticles.length; i++) {
     if (!allArticles[i].time || !allArticles[i - 1].time) {
@@ -56,7 +62,7 @@ async function sortHackerNewsArticles() {
     }
   }
 
-  // Test result console message
+  // Log the final result of the sorting check
   if (isSorted) {
     console.log('PASS: The first 100 articles are correctly sorted from newest to oldest.');
   } else {

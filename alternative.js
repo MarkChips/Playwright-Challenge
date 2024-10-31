@@ -10,23 +10,23 @@ async function sortHackerNewsArticles() {
   // Navigate to Hacker News newest page
   await page.goto('https://news.ycombinator.com/newest');
 
-  // Click the "More" button until we have at least 100 articles
-  let moreButtonSelector = '.morelink';
   let allArticles = [];
 
   while (allArticles.length < 100) {
-    // Click the "More" button
-    await page.click(moreButtonSelector);
+    // Click the "More" button to load more articles
+    await page.click('.morelink');
 
-    // Wait for the new page to load
-    await page.waitForLoadState('networkidle'); // Wait until the network is idle
+    // Wait for the article elements to load
+    await page.waitForSelector('tr .athing');
 
+    // Extract article information from the current page
     const pageArticles = await page.evaluate(() => {
       const rows = document.querySelectorAll('tr.athing');
       return Array.from(rows).slice(0, 100).map(row => {
         const id = parseInt(row.id);
         const subtext = row.nextElementSibling;
         const timeElement = subtext.querySelector('.age');
+        // Extract the timestamp, or null if not found
         const time = timeElement ? timeElement.getAttribute('title') : null;
         return { id, time };
       });
@@ -37,14 +37,18 @@ async function sortHackerNewsArticles() {
 
   allArticles = allArticles.slice(0, 100);
 
+  // Log articles with their index for debugging
   console.log(allArticles.map((row, index) => ({index, ...row})));
 
+  // Check if articles are sorted from newest to oldest
   let isSorted = true;
   for (let i = 1; i < allArticles.length; i++) {
+    // Check for missing timestamps
     if (!allArticles[i].time || !allArticles[i-1].time) {
       console.log(`Warning: Missing timestamp for article ${allArticles[i].id} or ${allArticles[i-1].id}`);
       continue;
     }
+    // Convert timestamps to Date objects for comparison
     const prevTime = new Date(allArticles[i-1].time);
     const currTime = new Date(allArticles[i].time);
     if (prevTime < currTime) {
@@ -54,6 +58,7 @@ async function sortHackerNewsArticles() {
     }
   }
 
+  // Log the final result of the sorting check
   if (isSorted) {
     console.log('PASS: The first 100 articles are correctly sorted from newest to oldest.');
   } else {
